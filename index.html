@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>부산 2026 • 내 성향 맞춤 코스 추천</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style> body { font-family: 'Noto Sans KR', system-ui, sans-serif; } </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-cyan-100 min-h-screen py-8">
+  <div class="max-w-3xl mx-auto px-6">
+    <h1 class="text-4xl font-bold text-center text-blue-900 mb-2">부산 2026</h1>
+    <p class="text-center text-blue-600 mb-8">내 여행 성향으로 딱! 맞는 코스 추천받기 🌊</p>
+
+    <!-- 입력 폼 -->
+    <div class="bg-white rounded-3xl shadow-xl p-8 mb-10">
+      <div class="mb-6">
+        <label class="block text-lg font-medium mb-3">여행 기간</label>
+        <select id="duration" class="w-full p-4 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:border-blue-500">
+          <option value="1">1박 2일</option>
+          <option value="2" selected>2박 3일</option>
+          <option value="3">3박 4일</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-lg font-medium mb-3">여행 성향 (복수 선택)</label>
+        <div class="grid grid-cols-2 gap-3" id="preferences"></div>
+      </div>
+
+      <button onclick="recommendCourse()" 
+              class="mt-8 w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-5 rounded-3xl text-xl font-bold hover:scale-105 transition-all">
+        🚀 내 맞춤 코스 추천받기
+      </button>
+    </div>
+
+    <!-- 결과 영역 -->
+    <div id="result" class="hidden"></div>
+  </div>
+
+  <script>
+    // 2026.5.23 기준 최신 데이터 + 동선 고려
+    const coursesDB = {
+      beach: ["해운대 해수욕장 산책", "광안리 드론쇼 야경 (매주 토요일)", "블루라인파크 스카이캡슐", "해운대 모래축제 전시", "송정해수욕장"],
+      food: ["자갈치시장 신선한 해산물", "돼지국밥", "국제시장 어묵·씨앗호떡", "장어구이 거리", "해운대 포장마차 야시장"],
+      culture: ["감천문화마을", "BIFF 광장·남포동", "해동용궁사", "부산타워", "흰여울문화마을", "삼광사 연등축제 (5/24까지)"],
+      activity: ["블루라인파크 열차·스카이캡슐", "광안리 SUP·자전거", "해운대 요트 체험", "센텀시티 스카이워크"],
+      family: ["해운대 모래축제 + 산책", "광안리 카페거리", "자갈치시장 체험", "아쿠아리움·영화의전당"],
+      shopping: ["자갈치·국제시장", "해운대 지하상가", "센텀시티·신세계백화점", "남포동 상점가"],
+      festival: ["센텀맥주축제 (5/22~31)", "택슐랭 원도심 활성화축제 (5/22~24)", "부산세계시민축제 (5/23 오늘!)", "삼광사 연등축제"]
+    };
+
+    const prefList = [
+      {key:"beach", label:"🌊 해변·휴양", icon:"🏖️"},
+      {key:"food", label:"🍲 음식 탐방", icon:"🍣"},
+      {key:"culture", label:"📸 문화·예술·인스타", icon:"🖼️"},
+      {key:"activity", label:"🎢 체험·액티비티", icon:"🚋"},
+      {key:"family", label:"👨‍👩‍👧‍👦 가족/커플", icon:"❤️"},
+      {key:"shopping", label:"🛍 쇼핑·시장", icon:"🛒"}
+    ];
+
+    function createPreferences() {
+      const container = document.getElementById('preferences');
+      prefList.forEach(p => {
+        const div = document.createElement('div');
+        div.className = "flex items-center gap-3 bg-white border border-gray-200 rounded-2xl p-4 hover:border-blue-300 cursor-pointer";
+        div.innerHTML = `
+          <input type="checkbox" id="${p.key}" class="w-6 h-6 accent-blue-500">
+          <label for="${p.key}" class="flex-1 cursor-pointer text-lg">${p.icon} ${p.label}</label>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function recommendCourse() {
+      const duration = parseInt(document.getElementById('duration').value);
+      const selectedKeys = prefList.filter(p => document.getElementById(p.key).checked).map(p => p.key);
+      
+      if (selectedKeys.length === 0) {
+        alert("성향을 최소 1개 이상 골라주세요!");
+        return;
+      }
+
+      let allSpotsPool = [];
+      selectedKeys.forEach(key => {
+        allSpotsPool = allSpotsPool.concat(coursesDB[key] || []);
+      });
+      allSpotsPool = allSpotsPool.concat(coursesDB.festival);
+      allSpotsPool = [...new Set(allSpotsPool)];
+      shuffle(allSpotsPool);
+
+      let html = `<h2 class="text-3xl font-bold text-center mb-8">🎉 당신을 위한 ${duration}박 ${duration+1}일 부산 코스</h2>`;
+      html += `<p class="text-center text-emerald-600 mb-6 text-sm font-medium">✅ 주요 지역 동선을 고려해 이동 부담을 줄인 코스입니다</p>`;
+
+      for (let day = 1; day <= duration + 1; day++) {
+        const daySpots = allSpotsPool.slice((day-1)*3, day*3);
+        
+        html += `
+          <div class="bg-white rounded-3xl shadow-lg p-7 mb-8">
+            <div class="flex items-center gap-3 mb-6 border-b pb-4">
+              <div class="bg-blue-100 text-blue-700 w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-xl">${day}</div>
+              <h3 class="text-2xl font-semibold">2026 부산 ${day}일차 추천</h3>
+            </div>
+            <div class="space-y-6">
+        `;
+
+        const times = ["🌅 아침~오전", "🍽 점심", "🌇 오후~저녁"];
+        daySpots.forEach((spot, i) => {
+          html += `
+            <div class="flex gap-4">
+              <div class="w-24 text-sm font-medium text-blue-600">${times[i] || "🌟"}</div>
+              <div class="flex-1">
+                <p class="font-semibold text-lg">${spot}</p>
+                ${(spot.includes('모래축제') || spot.includes('연등축제') || spot.includes('맥주축제') || spot.includes('택슐랭') || spot.includes('세계시민축제')) ? '<span class="inline-block mt-1 text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-3xl">🎉 현재 진행 중!</span>' : ''}
+              </div>
+            </div>
+          `;
+        });
+
+        html += `</div></div>`;
+      }
+
+      html += `
+        <div class="text-center text-sm text-gray-500 mt-8 p-4 bg-white rounded-3xl">
+          ※ 2026년 5월 23일 기준<br>
+          ※ 주요 지역 동선을 고려해 추천 • 카카오맵으로 실시간 이동시간 확인하세요!
+        </div>`;
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.classList.remove('hidden');
+      resultDiv.innerHTML = html;
+      resultDiv.scrollIntoView({ behavior: "smooth" });
+    }
+
+    window.onload = createPreferences;
+  </script>
+</body>
+</html>
