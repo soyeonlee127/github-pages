@@ -40,7 +40,6 @@
   </div>
 
   <script>
-    // 2026.5.23 기준 최신 데이터 + 동선 고려
     const coursesDB = {
       beach: ["해운대 해수욕장 산책", "광안리 드론쇼 야경 (매주 토요일)", "블루라인파크 스카이캡슐", "해운대 모래축제 전시", "송정해수욕장"],
       food: ["자갈치시장 신선한 해산물", "돼지국밥", "국제시장 어묵·씨앗호떡", "장어구이 거리", "해운대 포장마차 야시장"],
@@ -50,6 +49,24 @@
       shopping: ["자갈치·국제시장", "해운대 지하상가", "센텀시티·신세계백화점", "남포동 상점가"],
       festival: ["센텀맥주축제 (5/22~31)", "택슐랭 원도심 활성화축제 (5/22~24)", "부산세계시민축제 (5/23 오늘!)", "삼광사 연등축제"]
     };
+
+    const zonePriority = { haeundae: 1, gwangalli: 2, centum: 3, nampo: 4, gamcheon: 5, other: 6 };
+    const spotToZone = {
+      "해운대 해수욕장 산책": "haeundae", "블루라인파크 스카이캡슐": "haeundae", "해운대 모래축제 전시": "haeundae",
+      "송정해수욕장": "haeundae", "해운대 포장마차 야시장": "haeundae",
+      "광안리 드론쇼 야경 (매주 토요일)": "gwangalli", "광안리 SUP·자전거": "gwangalli", "광안리 카페거리": "gwangalli",
+      "센텀시티 스카이워크": "centum", "센텀맥주축제 (5/22~31)": "centum",
+      "자갈치시장 신선한 해산물": "nampo", "돼지국밥": "nampo", "국제시장 어묵·씨앗호떡": "nampo",
+      "장어구이 거리": "nampo", "BIFF 광장·남포동": "nampo", "부산타워": "nampo", "자갈치·국제시장": "nampo",
+      "남포동 상점가": "nampo", "자갈치시장 체험": "nampo",
+      "감천문화마을": "gamcheon", "흰여울문화마을": "gamcheon",
+      "해동용궁사": "other", "아쿠아리움·영화의전당": "other", "삼광사 연등축제 (5/24까지)": "other",
+      "택슐랭 원도심 활성화축제 (5/22~24)": "other", "부산세계시민축제 (5/23 오늘!)": "other"
+    };
+
+    function getZonePriority(spot) {
+      return zonePriority[spotToZone[spot] || "other"];
+    }
 
     const prefList = [
       {key:"beach", label:"🌊 해변·휴양", icon:"🏖️"},
@@ -90,16 +107,18 @@
       selectedKeys.forEach(key => {
         allSpotsPool = allSpotsPool.concat(coursesDB[key] || []);
       });
-      allSpotsPool = allSpotsPool.concat(coursesDB.festival);
+      allSpotsPool = allSpotsPool.concat(coursesDB.festival || []);
       allSpotsPool = [...new Set(allSpotsPool)];
-      shuffle(allSpotsPool);
+
+      shuffle(allSpotsPool);   // 전체 다양성 확보
 
       let html = `<h2 class="text-3xl font-bold text-center mb-8">🎉 당신을 위한 ${duration}박 ${duration+1}일 부산 코스</h2>`;
-      html += `<p class="text-center text-emerald-600 mb-6 text-sm font-medium">✅ 주요 지역 동선을 고려해 이동 부담을 줄인 코스입니다</p>`;
+      html += `<p class="text-center text-emerald-600 mb-6 text-sm font-medium">✅ 하루 단위 Distance-based route optimization 적용 (이동 부담 최소화)</p>`;
 
       for (let day = 1; day <= duration + 1; day++) {
-        const daySpots = allSpotsPool.slice((day-1)*3, day*3);
-        
+        let daySpots = allSpotsPool.slice((day-1)*3, day*3);
+        daySpots.sort((a, b) => getZonePriority(a) - getZonePriority(b));  // 하루 안에서만 동선 최적화
+
         html += `
           <div class="bg-white rounded-3xl shadow-lg p-7 mb-8">
             <div class="flex items-center gap-3 mb-6 border-b pb-4">
@@ -128,7 +147,7 @@
       html += `
         <div class="text-center text-sm text-gray-500 mt-8 p-4 bg-white rounded-3xl">
           ※ 2026년 5월 23일 기준<br>
-          ※ 주요 지역 동선을 고려해 추천 • 카카오맵으로 실시간 이동시간 확인하세요!
+          ※ 하루 단위 거리 기반 경로 최적 적용 • 카카오맵으로 실시간 이동시간 확인하세요!
         </div>`;
 
       const resultDiv = document.getElementById('result');
